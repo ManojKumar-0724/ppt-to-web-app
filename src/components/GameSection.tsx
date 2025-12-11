@@ -1,36 +1,62 @@
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trophy, Target, Star, Award } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
-const quizzes = [
-  {
-    title: "Vijayanagara Legends",
-    difficulty: "Medium",
-    questions: 10,
-    points: 100,
-    icon: Trophy,
-    color: "from-heritage-terracotta to-heritage-gold",
-  },
-  {
-    title: "Temple Architecture Quiz",
-    difficulty: "Hard",
-    questions: 15,
-    points: 150,
-    icon: Target,
-    color: "from-heritage-indigo to-heritage-terracotta",
-  },
-  {
-    title: "Folk Story Characters",
-    difficulty: "Easy",
-    questions: 8,
-    points: 80,
-    icon: Star,
-    color: "from-heritage-gold to-heritage-indigo",
-  },
-];
+interface Monument {
+  id: string;
+  title: string;
+}
 
 export const GameSection = () => {
+  const navigate = useNavigate();
+  const [monuments, setMonuments] = useState<Monument[]>([]);
+
+  useEffect(() => {
+    fetchMonuments();
+  }, []);
+
+  const fetchMonuments = async () => {
+    const { data } = await supabase
+      .from('monuments')
+      .select('id, title')
+      .limit(3);
+    if (data) setMonuments(data);
+  };
+
+  const quizzes = [
+    {
+      title: monuments[0]?.title || "Loading...",
+      monumentId: monuments[0]?.id,
+      difficulty: "Medium",
+      questions: 5,
+      points: 100,
+      icon: Trophy,
+      color: "from-heritage-terracotta to-heritage-gold",
+    },
+    {
+      title: monuments[1]?.title || "Loading...",
+      monumentId: monuments[1]?.id,
+      difficulty: "Hard",
+      questions: 5,
+      points: 150,
+      icon: Target,
+      color: "from-heritage-indigo to-heritage-terracotta",
+    },
+    {
+      title: monuments[2]?.title || "Loading...",
+      monumentId: monuments[2]?.id,
+      difficulty: "Easy",
+      questions: 5,
+      points: 80,
+      icon: Star,
+      color: "from-heritage-gold to-heritage-indigo",
+    },
+  ];
+
   return (
     <section className="py-24 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -77,7 +103,11 @@ export const GameSection = () => {
                   <span className="text-lg font-bold text-heritage-gold">{quiz.points} pts</span>
                 </div>
 
-                <Button className="w-full bg-heritage-terracotta hover:bg-heritage-terracotta/90 text-heritage-cream">
+                <Button 
+                  onClick={() => quiz.monumentId && navigate(`/quiz?monumentId=${quiz.monumentId}`)}
+                  disabled={!quiz.monumentId}
+                  className="w-full bg-heritage-terracotta hover:bg-heritage-terracotta/90 text-heritage-cream"
+                >
                   Start Quiz
                 </Button>
               </Card>

@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, Users, Shield, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const stats = [
   { icon: Users, value: "2,500+", label: "Contributors" },
@@ -10,6 +11,8 @@ const stats = [
 ];
 
 export const CrowdsourceSection = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="py-24 bg-background relative overflow-hidden">
       {/* Background Pattern */}
@@ -51,7 +54,11 @@ export const CrowdsourceSection = () => {
                 ))}
               </div>
 
-              <Button size="lg" className="bg-heritage-indigo hover:bg-heritage-indigo/90 text-heritage-cream shadow-monument">
+              <Button 
+                size="lg" 
+                onClick={() => navigate('/contribute')}
+                className="bg-heritage-indigo hover:bg-heritage-indigo/90 text-heritage-cream shadow-monument"
+              >
                 <Upload className="mr-2 h-5 w-5" />
                 Contribute a Story
               </Button>
