@@ -4,11 +4,11 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MapPin, Clock, Star, Volume2, FileText, Gamepad2, Heart, ArrowLeft } from "lucide-react";
+import { Loader2, MapPin, Clock, Star, Volume2, Gamepad2, Heart, ArrowLeft, Eye, PenTool } from "lucide-react";
 import { useFavorites } from "@/hooks/useFavorites";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +42,9 @@ export default function MonumentDetails() {
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summary, setSummary] = useState<string>('');
   const [summaryLength, setSummaryLength] = useState<'short' | 'medium' | 'detailed'>('short');
+  const [narrationModal, setNarrationModal] = useState(false);
+  const [narrationText, setNarrationText] = useState('');
+  const [narrationLanguage, setNarrationLanguage] = useState('');
   const { toast } = useToast();
   const { isFavorite, loading: favoriteLoading, toggleFavorite } = useFavorites(monumentId || '');
 
@@ -58,7 +61,7 @@ export default function MonumentDetails() {
         .from('monuments')
         .select('*')
         .eq('id', monumentId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setMonument(data);
@@ -99,14 +102,14 @@ export default function MonumentDetails() {
 
       if (error) throw error;
 
-      toast({
-        title: "Audio Generated",
-        description: `Narration ready in ${language === 'en' ? 'English' : 'Kannada'}`,
-      });
+      setNarrationText(data.text);
+      setNarrationLanguage(language === 'en' ? 'English' : 'Kannada');
+      setNarrationModal(true);
 
-      // In a real app, you would play the audio here
-      // For now, we just show the translated text
-      console.log('Generated narration:', data.text);
+      toast({
+        title: "Narration Generated",
+        description: `${language === 'en' ? 'English' : 'Kannada'} narration is ready`,
+      });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -180,7 +183,7 @@ export default function MonumentDetails() {
       <Navbar />
       <main className="pt-20">
         {/* Hero Section */}
-        <div className="relative h-[60vh] overflow-hidden">
+        <div className="relative h-[50vh] md:h-[60vh] overflow-hidden">
           <img
             src={monument.image_url}
             alt={monument.title}
@@ -198,9 +201,9 @@ export default function MonumentDetails() {
               Back
             </Button>
             
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
               <div>
-                <h1 className="text-4xl md:text-6xl font-bold text-heritage-cream mb-4">
+                <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-heritage-cream mb-4">
                   {monument.title}
                 </h1>
                 <div className="flex flex-wrap gap-4 text-heritage-cream/90">
@@ -222,7 +225,7 @@ export default function MonumentDetails() {
               <button
                 onClick={toggleFavorite}
                 disabled={favoriteLoading}
-                className="p-3 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-all duration-300 disabled:opacity-50"
+                className="p-3 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-all duration-300 disabled:opacity-50 self-start"
               >
                 <Heart
                   className={cn(
@@ -236,7 +239,7 @@ export default function MonumentDetails() {
         </div>
 
         {/* Content Section */}
-        <div className="container mx-auto px-4 py-16">
+        <div className="container mx-auto px-4 py-8 md:py-16">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-8">
@@ -258,7 +261,7 @@ export default function MonumentDetails() {
                 <TabsContent value="summary" className="space-y-4">
                   <Card className="p-6">
                     <div className="space-y-4">
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           size="sm"
                           variant={summaryLength === 'short' ? 'default' : 'outline'}
@@ -310,6 +313,7 @@ export default function MonumentDetails() {
                         className="mt-4"
                         onClick={() => navigate(`/contribute?monumentId=${monument.id}`)}
                       >
+                        <PenTool className="mr-2 h-4 w-4" />
                         Contribute a Story
                       </Button>
                     </Card>
@@ -318,7 +322,7 @@ export default function MonumentDetails() {
                       <Card key={story.id} className="p-6 space-y-3">
                         <h3 className="text-xl font-semibold text-foreground">{story.title}</h3>
                         <p className="text-sm text-muted-foreground">
-                          By {story.author_name} • {new Date(story.created_at).toLocaleDateString()}
+                          By {story.author_name || 'Anonymous'} • {new Date(story.created_at).toLocaleDateString()}
                         </p>
                         <p className="text-foreground leading-relaxed">{story.content}</p>
                       </Card>
@@ -340,7 +344,7 @@ export default function MonumentDetails() {
                     className="w-full justify-start"
                     variant="outline"
                   >
-                    <Volume2 className="mr-2 h-4 w-4" />
+                    {audioLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Volume2 className="mr-2 h-4 w-4" />}
                     Listen in English
                   </Button>
                   
@@ -350,7 +354,7 @@ export default function MonumentDetails() {
                     className="w-full justify-start"
                     variant="outline"
                   >
-                    <Volume2 className="mr-2 h-4 w-4" />
+                    {audioLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Volume2 className="mr-2 h-4 w-4" />}
                     Listen in Kannada
                   </Button>
                   
@@ -367,25 +371,62 @@ export default function MonumentDetails() {
                     className="w-full justify-start"
                     variant="secondary"
                   >
+                    <Eye className="mr-2 h-4 w-4" />
                     View in AR
+                  </Button>
+
+                  <Button
+                    onClick={() => navigate(`/contribute?monumentId=${monument.id}`)}
+                    className="w-full justify-start"
+                    variant="outline"
+                  >
+                    <PenTool className="mr-2 h-4 w-4" />
+                    Contribute Story
                   </Button>
                 </div>
               </Card>
 
               <Card className="p-6">
                 <h3 className="text-xl font-semibold text-foreground mb-4">Location</h3>
-                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                  <MapPin className="w-8 h-8 text-muted-foreground" />
-                  <p className="ml-2 text-sm text-muted-foreground">Map integration placeholder</p>
+                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                  <iframe
+                    title="Monument Location"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(monument.title + ' ' + monument.location)}`}
+                  />
                 </div>
                 <p className="mt-4 text-sm text-muted-foreground">
-                  {monument.location}
+                  📍 {monument.location}
                 </p>
               </Card>
             </div>
           </div>
         </div>
       </main>
+
+      {/* Narration Modal */}
+      <Dialog open={narrationModal} onOpenChange={setNarrationModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Volume2 className="h-5 w-5 text-heritage-terracotta" />
+              {narrationLanguage} Narration
+            </DialogTitle>
+            <DialogDescription>
+              AI-generated narration for {monument?.title}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 p-4 bg-muted rounded-lg">
+            <p className="text-foreground whitespace-pre-line leading-relaxed">
+              {narrationText}
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   );

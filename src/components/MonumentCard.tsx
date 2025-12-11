@@ -60,7 +60,10 @@ export const MonumentCard = ({ title, location, image, stories, rating, era, mon
         {/* View AR Button - appears on hover */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
           <Button 
-            onClick={() => navigate(`/ar?monument=${monumentId}`)}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/ar?monument=${monumentId}`);
+            }}
             className="bg-heritage-terracotta hover:bg-heritage-terracotta/90 text-heritage-cream shadow-glow"
           >
             View in AR
